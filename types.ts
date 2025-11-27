@@ -1,3 +1,4 @@
+
 export enum UserRole {
   ADMIN = 'ADMIN',
   ALUMNI = 'ALUMNI',
@@ -51,6 +52,7 @@ export interface Event {
   location: string;
   description: string;
   registrations_count: number;
+  registrations?: string[];
 }
 
 export interface Application {

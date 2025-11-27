@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { Opportunity, Event, Application, Profile, OpportunityType } from '../types';
 import { MOCK_OPPORTUNITIES, MOCK_EVENTS, MOCK_APPLICATIONS, MOCK_PROFILES } from '../services/mockData';
@@ -12,6 +13,7 @@ interface DataContextType {
   addApplication: (app: Application) => void;
   updateProfile: (profile: Profile) => void;
   getProfileByUserId: (userId: string) => Profile | undefined;
+  registerForEvent: (eventId: string, userId: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -48,6 +50,21 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     return profiles.find(p => p.user_id === userId);
   };
 
+  const registerForEvent = (eventId: string, userId: string) => {
+    setEvents(prev => prev.map(evt => {
+      if (evt.event_id === eventId) {
+        const currentRegs = evt.registrations || [];
+        if (currentRegs.includes(userId)) return evt; // Already registered
+        return {
+          ...evt,
+          registrations: [...currentRegs, userId],
+          registrations_count: evt.registrations_count + 1
+        };
+      }
+      return evt;
+    }));
+  };
+
   return (
     <DataContext.Provider value={{
       opportunities,
@@ -58,7 +75,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       addEvent,
       addApplication,
       updateProfile,
-      getProfileByUserId
+      getProfileByUserId,
+      registerForEvent
     }}>
       {children}
     </DataContext.Provider>

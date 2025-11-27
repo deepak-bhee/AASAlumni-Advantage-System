@@ -1,14 +1,19 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { UserRole, Event } from '../types';
-import { Calendar, MapPin, Clock, Plus, Users } from 'lucide-react';
+import { Calendar, MapPin, Clock, Plus, Users, CheckCircle, Loader2, X } from 'lucide-react';
 
 export const Events = () => {
   const { user } = useAuth();
-  const { events, addEvent } = useData();
+  const { events, addEvent, registerForEvent } = useData();
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<Partial<Event>>({});
+  
+  // Registration States
+  const [registeringId, setRegisteringId] = useState<string | null>(null);
+  const [successEvent, setSuccessEvent] = useState<Event | null>(null);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +27,8 @@ export const Events = () => {
       time: formData.time || '',
       location: formData.location || '',
       description: formData.description || '',
-      registrations_count: 0
+      registrations_count: 0,
+      registrations: []
     };
     
     addEvent(newEvent);
@@ -30,12 +36,29 @@ export const Events = () => {
     setFormData({});
   };
 
-  const handleRegister = () => {
-    alert("Registration Successful! A confirmation email has been sent via SendGrid (Mock).");
-  }
+  const handleRegister = async (event: Event) => {
+    if (!user) return;
+    setRegisteringId(event.event_id);
+
+    // Simulate API delay for "Sending Email/SMS"
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    registerForEvent(event.event_id, user.user_id);
+    
+    // Simulate notification logging
+    console.log(`[Notification Service] SMS sent to ${user.name}: Registration confirmed for ${event.title}`);
+    console.log(`[Notification Service] Email sent to ${user.email}: Registration details for ${event.title}`);
+
+    setRegisteringId(null);
+    setSuccessEvent(event);
+  };
+
+  const isRegistered = (event: Event) => {
+    return user && event.registrations?.includes(user.user_id);
+  };
 
   return (
-    <div>
+    <div className="relative">
       <div className="flex justify-between items-center mb-8">
         <div>
            <h2 className="text-2xl font-bold text-gray-900">Events</h2>
@@ -54,12 +77,12 @@ export const Events = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {events.map(evt => (
-          <div key={evt.event_id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+          <div key={evt.event_id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow flex flex-col">
             <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 p-6 flex items-end">
               <h3 className="text-white font-bold text-lg leading-tight">{evt.title}</h3>
             </div>
-            <div className="p-6">
-              <div className="space-y-3 mb-6">
+            <div className="p-6 flex-1 flex flex-col">
+              <div className="space-y-3 mb-6 flex-1">
                 <div className="flex items-center text-sm text-gray-600">
                   <Calendar size={16} className="mr-2 text-primary-500" />
                   <span>{evt.date}</span>
@@ -80,18 +103,34 @@ export const Events = () => {
               
               <p className="text-gray-600 text-sm mb-6 line-clamp-3">{evt.description}</p>
               
-              <button 
-                onClick={handleRegister}
-                className="w-full py-2 bg-gray-50 text-primary-600 font-semibold rounded-lg border border-gray-200 hover:bg-primary-50 hover:border-primary-200 transition-all"
-              >
-                Register Now
-              </button>
+              {user?.role === UserRole.STUDENT && (
+                <button 
+                  onClick={() => handleRegister(evt)}
+                  disabled={!!isRegistered(evt) || registeringId === evt.event_id}
+                  className={`w-full py-2 flex justify-center items-center font-semibold rounded-lg transition-all ${
+                    isRegistered(evt) 
+                    ? 'bg-green-50 text-green-700 border border-green-200 cursor-default'
+                    : 'bg-gray-50 text-primary-600 border border-gray-200 hover:bg-primary-50 hover:border-primary-200'
+                  }`}
+                >
+                  {registeringId === evt.event_id ? (
+                    <Loader2 className="animate-spin w-5 h-5" />
+                  ) : isRegistered(evt) ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Registered
+                    </>
+                  ) : (
+                    'Register Now'
+                  )}
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-       {/* Modal */}
+       {/* Create Event Modal */}
        {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg p-8">
@@ -138,6 +177,45 @@ export const Events = () => {
                  <button type="submit" className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Create Event</button>
                </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Success Confirmation Modal */}
+      {successEvent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={() => setSuccessEvent(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="text-center pt-2">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Registration Confirmed!</h3>
+              <p className="text-gray-500 mb-6">
+                You have successfully registered for <span className="font-semibold text-gray-700">{successEvent.title}</span>.
+              </p>
+              
+              <div className="bg-blue-50 rounded-lg p-4 text-left text-sm text-blue-800 mb-6">
+                <p className="font-medium mb-1">Notifications Sent:</p>
+                <ul className="list-disc list-inside space-y-1 opacity-80">
+                  <li>Email confirmation to {user?.email}</li>
+                  <li>SMS reminder scheduled for {successEvent.date}</li>
+                </ul>
+              </div>
+
+              <button 
+                onClick={() => setSuccessEvent(null)}
+                className="w-full py-2.5 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors shadow-sm"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+
 import { User, UserRole, Profile, Opportunity, OpportunityType, Event, Application } from '../types';
 
 export const MOCK_USERS: User[] = [
@@ -18,8 +19,8 @@ export const MOCK_OPPORTUNITIES: Opportunity[] = [
 ];
 
 export const MOCK_EVENTS: Event[] = [
-  { event_id: 'e1', creator_id: 'u1', title: 'Alumni Meetup 2025', date: '2025-11-20', time: '10:00 AM', location: 'SDM Auditorium', description: 'Annual gathering of all batch alumni.', registrations_count: 120 },
-  { event_id: 'e2', creator_id: 'u2', title: 'Tech Talk: Future of AI', date: '2025-12-05', time: '02:00 PM', location: 'Virtual (Zoom)', description: 'Deep dive into Generative AI trends.', registrations_count: 45 },
+  { event_id: 'e1', creator_id: 'u1', title: 'Alumni Meetup 2025', date: '2025-11-20', time: '10:00 AM', location: 'SDM Auditorium', description: 'Annual gathering of all batch alumni.', registrations_count: 120, registrations: [] },
+  { event_id: 'e2', creator_id: 'u2', title: 'Tech Talk: Future of AI', date: '2025-12-05', time: '02:00 PM', location: 'Virtual (Zoom)', description: 'Deep dive into Generative AI trends.', registrations_count: 45, registrations: [] },
 ];
 
 export const MOCK_APPLICATIONS: Application[] = [
